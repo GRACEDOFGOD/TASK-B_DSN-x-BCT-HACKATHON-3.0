@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: task-b-recommender
+    env: docker
+    branch: main
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: GROQ_API_KEY
+        required: true
+      - key: MODEL_NAME
+        value: llama-3.3-70b-versatile
+      - key: DEFAULT_NUM_RECS
+        value: "10"
+      - key: MAX_NUM_RECS
+        value: "20"

@@ -67,6 +67,15 @@ http://127.0.0.1:8000/
 docker-compose up --build
 ```
 
+## Render Deployment
+
+This project is configured to deploy as a Render Docker service using `render.yaml`.
+Render will build the container from `Dockerfile` and use the same runtime environment as local Docker.
+
+1. Add `GROQ_API_KEY` in Render Dashboard or via the `render.yaml` env vars.
+2. Choose `Docker` as the service environment.
+3. Deploy from the `main` branch.
+
 ## API Endpoints
 
 | Method | Path | Description |
