@@ -1,10 +1,10 @@
 """
 Tests — Task B Recommendation Agent
-Run: pytest tests/ -v
+Run: python -m unittest discover -s tests -p '*.py'
 """
 
-import pytest
 import math
+import unittest
 from app.services.metrics import (
     compute_ndcg_at_k,
     compute_hit_rate_at_k,
@@ -19,7 +19,7 @@ from app.data.personas import USER_PERSONAS
 
 # ── Metrics tests ──────────────────────────────────────────────────────────
 
-class TestNDCG:
+class TestNDCG(unittest.TestCase):
     def test_perfect_ranking(self):
         recs = ["A", "B", "C"]
         rel = ["A", "B", "C"]
@@ -49,7 +49,7 @@ class TestNDCG:
         assert compute_ndcg_at_k(["A", "B"], [], k=10) == 0.0
 
 
-class TestHitRate:
+class TestHitRate(unittest.TestCase):
     def test_hit(self):
         recs = ["A", "B", "C"]
         rel = ["C", "D"]
@@ -67,23 +67,23 @@ class TestHitRate:
         assert compute_hit_rate_at_k(recs, rel, k=3) == 0.0
 
 
-class TestPrecisionRecall:
+class TestPrecisionRecall(unittest.TestCase):
     def test_precision(self):
         recs = ["A", "B", "X"]
         rel = ["A", "B", "C"]
         p = compute_precision_at_k(recs, rel, k=3)
-        assert p == pytest.approx(2/3, rel=1e-3)
+        assert math.isclose(p, 2/3, rel_tol=1e-3)
 
     def test_recall(self):
         recs = ["A", "B", "X"]
         rel = ["A", "B", "C", "D"]
         r = compute_recall_at_k(recs, rel, k=3)
-        assert r == pytest.approx(2/4, rel=1e-3)
+        assert math.isclose(r, 2/4, rel_tol=1e-3)
 
 
 # ── Scoring tests ──────────────────────────────────────────────────────────
 
-class TestItemScoring:
+class TestItemScoring(unittest.TestCase):
     def test_scores_all_items(self):
         persona = USER_PERSONAS["persona_001"]
         taste_profile = {
@@ -153,7 +153,7 @@ class TestItemScoring:
 
 # ── Catalog tests ──────────────────────────────────────────────────────────
 
-class TestCatalog:
+class TestCatalog(unittest.TestCase):
     def test_all_items_have_required_fields(self):
         required = {"id", "name", "domain", "category", "price_range", "tags", "avg_rating", "popularity"}
         for item in ALL_ITEMS:
@@ -175,7 +175,7 @@ class TestCatalog:
 
 # ── Persona tests ──────────────────────────────────────────────────────────
 
-class TestPersonas:
+class TestPersonas(unittest.TestCase):
     def test_eight_personas_loaded(self):
         assert len(USER_PERSONAS) == 8
 

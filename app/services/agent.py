@@ -119,7 +119,7 @@ def score_items_for_persona(
       Popularity         0–15
       Rating quality     0–10
       Context boost      0–10
-      Avoid-tag penalty  −15 per tag hit
+      Avoid-tag penalty  −25 per tag hit
     """
     exclude_ids = exclude_ids or []
     scored = []
@@ -155,9 +155,9 @@ def score_items_for_persona(
         overlap = len(interests & item_tags)
         score += min(overlap * 8, 25)
 
-        # 4. Avoid-tag penalty (−15 per hit)
+        # 4. Avoid-tag penalty (−25 per hit)
         avoid = set(taste_profile.get("avoid_tags", []))
-        score -= len(avoid & item_tags) * 15
+        score -= len(avoid & item_tags) * 25
 
         # 5. Popularity (0–15)
         score += item.get("popularity", 0.5) * 15
