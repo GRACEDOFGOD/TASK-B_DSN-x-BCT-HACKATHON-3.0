@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSN × BCT — Task B: Recommendation Agent</title>
+  <style>
+    :root {
+      --green: #008751;
+      --green-light: #00a862;
+      --green-dark: #005c37;
+      --gold: #f5a623;
+      --gold-light: #ffd080;
+      --white: #ffffff;
+      --bg: #f4f7f4;
+      --card: #ffffff;
+      --border: #d8e8d8;
+      --text: #1a2a1a;
+      --muted: #5a7a5a;
+      --tag-bg: #e8f5e8;
+      --shadow: 0 2px 12px rgba(0,135,81,0.1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 60%, var(--green-light) 100%);
+      color: white; padding: 24px 32px; display: flex; align-items: center; gap: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .logo { font-size: 2rem; }
+    header h1 { font-size: 1.4rem; font-weight: 700; }
+    header p { font-size: 0.85rem; opacity: 0.85; margin-top: 2px; }
+    .badge {
+      margin-left: auto; background: var(--gold); color: #1a2a1a;
+      padding: 6px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 700;
+    }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px 20px; display: grid; grid-template-columns: 380px 1fr; gap: 24px; }
+    @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
+
+    /* ── CARDS ── */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); }
+    .card-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--green); margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+
+    /* ── PERSONA SELECTOR ── */
+    .persona-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .persona-btn {
+      background: var(--bg); border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 10px 8px; cursor: pointer; transition: all 0.2s; text-align: left;
+      font-size: 0.78rem;
+    }
+    .persona-btn:hover { border-color: var(--green); background: var(--tag-bg); }
+    .persona-btn.active { border-color: var(--green); background: var(--tag-bg); }
+    .persona-btn .pname { font-weight: 700; font-size: 0.8rem; color: var(--text); }
+    .persona-btn .prole { color: var(--muted); font-size: 0.72rem; }
+
+    /* ── FORM ── */
+    label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+    input, textarea, select {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 9px 12px; font-size: 0.88rem; background: var(--bg);
+      transition: border-color 0.2s; color: var(--text); font-family: inherit;
+    }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--green); background: white; }
+    textarea { resize: vertical; min-height: 70px; }
+    .form-row { margin-bottom: 12px; }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* ── BUTTON ── */
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 13px; border: none; border-radius: 10px; cursor: pointer;
+      font-size: 0.95rem; font-weight: 700; transition: all 0.2s;
+    }
+    .btn-primary { background: var(--green); color: white; margin-top: 4px; }
+    .btn-primary:hover { background: var(--green-dark); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,135,81,0.35); }
+    .btn-primary:disabled { background: #a0bda0; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-gold { background: var(--gold); color: #1a2a1a; }
+    .btn-gold:hover { background: #e09510; }
+    .btn-sm { width: auto; padding: 7px 14px; font-size: 0.82rem; border-radius: 8px; }
+
+    /* ── TABS ── */
+    .tabs { display: flex; gap: 4px; background: var(--bg); border-radius: 10px; padding: 4px; margin-bottom: 16px; }
+    .tab {
+      flex: 1; padding: 8px; border: none; background: transparent; border-radius: 7px;
+      cursor: pointer; font-size: 0.82rem; font-weight: 600; color: var(--muted); transition: all 0.2s;
+    }
+    .tab.active { background: white; color: var(--green); box-shadow: 0 1px 6px rgba(0,0,0,0.1); }
+
+    /* ── RESULTS ── */
+    #results-panel { display: flex; flex-direction: column; gap: 16px; }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 0.9rem; }
+
+    /* ── TASTE PROFILE ── */
+    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .profile-item { background: var(--tag-bg); border-radius: 8px; padding: 8px 10px; }
+    .profile-item .pi-label { font-size: 0.7rem; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+    .profile-item .pi-val { font-size: 0.85rem; font-weight: 700; color: var(--green-dark); margin-top: 2px; }
+    .profile-summary { background: var(--bg); border-radius: 8px; padding: 10px 12px; font-size: 0.85rem; color: var(--text); margin-top: 8px; line-height: 1.5; }
+
+    /* ── RECOMMENDATION CARDS ── */
+    .rec-list { display: flex; flex-direction: column; gap: 10px; }
+    .rec-card {
+      border: 1.5px solid var(--border); border-radius: 10px; padding: 14px 16px;
+      display: flex; gap: 14px; align-items: flex-start; transition: border-color 0.2s;
+    }
+    .rec-card:hover { border-color: var(--green); }
+    .rec-rank {
+      min-width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-weight: 800; font-size: 0.9rem; flex-shrink: 0;
+    }
+    .rank-1 { background: #ffd700; color: #5a3a00; }
+    .rank-2 { background: #c0c0c0; color: #2a2a2a; }
+    .rank-3 { background: #cd7f32; color: white; }
+    .rank-other { background: var(--tag-bg); color: var(--green-dark); }
+    .rec-body { flex: 1; }
+    .rec-name { font-weight: 700; font-size: 0.95rem; }
+    .rec-meta { display: flex; gap: 6px; margin: 4px 0 6px; flex-wrap: wrap; }
+    .tag { background: var(--tag-bg); color: var(--green-dark); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; }
+    .tag-gold { background: #fff3d0; color: #7a4a00; }
+    .rec-why { font-size: 0.85rem; color: var(--text); line-height: 1.5; }
+    .rec-cross { font-size: 0.78rem; color: var(--muted); margin-top: 4px; font-style: italic; }
+    .conf-high { color: var(--green); }
+    .conf-medium { color: var(--gold); }
+    .conf-low { color: #e07050; }
+
+    /* ── AGENT REASONING ── */
+    .reasoning-box {
+      background: linear-gradient(135deg, #f0faf0, #e8f5e8);
+      border: 1px solid var(--border); border-left: 3px solid var(--green);
+      border-radius: 8px; padding: 12px 14px; font-size: 0.85rem; line-height: 1.6;
+      color: var(--text);
+    }
+
+    /* ── MULTITURN CHAT ── */
+    .chat-window { border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .chat-messages { min-height: 120px; max-height: 240px; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--bg); }
+    .chat-bubble { max-width: 80%; padding: 9px 13px; border-radius: 12px; font-size: 0.85rem; line-height: 1.5; }
+    .bubble-user { background: var(--green); color: white; align-self: flex-end; border-bottom-right-radius: 3px; }
+    .bubble-agent { background: white; border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: 3px; }
+    .chat-input-row { display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--border); background: white; }
+    .chat-input-row input { flex: 1; }
+    .chat-input-row button { flex-shrink: 0; }
+
+    /* ── METRICS ── */
+    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .metric-box { background: var(--tag-bg); border-radius: 10px; padding: 14px; text-align: center; }
+    .metric-val { font-size: 2rem; font-weight: 800; color: var(--green-dark); }
+    .metric-label { font-size: 0.75rem; color: var(--muted); margin-top: 2px; font-weight: 600; }
+
+    /* ── SPINNER ── */
+    .spinner { width: 20px; height: 20px; border: 2.5px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── DOMAINS COVERED ── */
+    .domains-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .cold-badge { background: #fff3d0; border: 1px solid var(--gold); color: #7a4500; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
+    .section-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🇳🇬</div>
+  <div>
+    <h1>DSN × BCT Hackathon 3.0 — Task B</h1>
+    <p>LLM-Powered Personalised Recommendation Agent · Cross-Domain · Multi-Turn</p>
+  </div>
+  <div class="badge">Groq LLaMA 3.3 70B</div>
+</header>
+
+<div class="container">
+
+  <!-- ── LEFT PANEL: Input ── -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+
+    <!-- Preset Personas -->
+    <div class="card">
+      <div class="card-title">👤 Quick Load — Preset Personas</div>
+      <div class="persona-grid" id="persona-grid"></div>
+      <button class="btn btn-gold btn-sm" onclick="clearPersona()">✏️ Build Custom Persona</button>
+    </div>
+
+    <!-- Persona Form -->
+    <div class="card">
+      <div class="card-title">📋 User Persona</div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>Full Name</label>
+          <input id="p-name" placeholder="e.g. Tunde Bakare" />
+        </div>
+        <div class="form-row">
+          <label>Age</label>
+          <input id="p-age" type="number" placeholder="e.g. 24" min="10" max="100" />
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>Gender</label>
+          <select id="p-gender"><option>Male</option><option>Female</option></select>
+        </div>
+        <div class="form-row">
+          <label>Income Level</label>
+          <select id="p-income"><option value="low">Low</option><option value="middle" selected>Middle</option><option value="high">High</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Location</label>
+        <input id="p-location" placeholder="e.g. Lagos, Nigeria" />
+      </div>
+      <div class="form-row">
+        <label>Occupation</label>
+        <input id="p-occupation" placeholder="e.g. Software Engineer" />
+      </div>
+      <div class="form-row">
+        <label>Goals & Needs</label>
+        <textarea id="p-goals" placeholder="What does this user want to achieve?"></textarea>
+      </div>
+      <div class="form-row">
+        <label>Preferences (comma-separated)</label>
+        <input id="p-prefs" placeholder="e.g. tech, food, music, gaming" />
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>Price Sensitivity</label>
+          <select id="p-price"><option value="very_high">Very High</option><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select>
+        </div>
+        <div class="form-row">
+          <label>Rating Style</label>
+          <select id="p-rating"><option value="generous">Generous</option><option value="honest" selected>Honest</option><option value="critical">Critical</option><option value="extreme">Extreme</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Request Config -->
+    <div class="card">
+      <div class="card-title">⚙️ Request Settings</div>
+      <div class="form-row">
+        <label>Context / What are you looking for?</label>
+        <textarea id="r-context" placeholder="e.g. 'Recommend something fun for the weekend' or leave blank for general recs"></textarea>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>No. of Recommendations</label>
+          <select id="r-numrecs">
+            <option value="5">5</option><option value="10" selected>10</option><option value="15">15</option><option value="20">20</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Cold-Start Mode?</label>
+          <select id="r-coldstart"><option value="false">No (has history)</option><option value="true">Yes (new user)</option></select>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="submit-btn" onclick="submitRecommend()">
+        <span id="btn-text">🚀 Get Recommendations</span>
+        <div class="spinner" id="spinner" style="display:none"></div>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ── RIGHT PANEL: Results ── -->
+  <div id="results-panel">
+    <div class="empty-state">
+      <div class="icon">🎯</div>
+      <p>Select a persona and click <strong>Get Recommendations</strong><br>to see personalised results with agent reasoning.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let personas = {};
+let currentPersonaId = null;
+let lastRecommendations = [];
+let chatHistory = [];
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+async function boot() {
+  try {
+    const res = await fetch('/api/v1/personas');
+    const data = await res.json();
+    data.forEach(p => { personas[p.id] = p; });
+    renderPersonaGrid(data);
+  } catch(e) { console.error('Failed to load personas', e); }
+}
+
+function renderPersonaGrid(personas) {
+  const grid = document.getElementById('persona-grid');
+  grid.innerHTML = personas.map(p => `
+    <button class="persona-btn" onclick="loadPersona('${p.id}')" id="pbtn-${p.id}">
+      <div class="pname">${p.name.split(' ')[0]}</div>
+      <div class="prole">${p.occupation}</div>
+      <div class="prole" style="color:var(--green);margin-top:2px">📍 ${p.location.split(',')[0]}</div>
+    </button>
+  `).join('');
+}
+
+async function loadPersona(id) {
+  currentPersonaId = id;
+  document.querySelectorAll('.persona-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`pbtn-${id}`)?.classList.add('active');
+
+  // fetch full preset and populate form
+  const res = await fetch(`/api/v1/recommend/preset/${id}?num_recs=1`, { method: 'POST' });
+  // Actually we populate from local personas data
+  const p = personas[id];
+  document.getElementById('p-name').value = p.name;
+  document.getElementById('p-age').value = p.age;
+  document.getElementById('p-location').value = p.location;
+  document.getElementById('p-occupation').value = p.occupation;
+  document.getElementById('p-prefs').value = p.preferences.join(', ');
+  document.getElementById('p-income').value = p.income_level;
+}
+
+function clearPersona() {
+  currentPersonaId = null;
+  document.querySelectorAll('.persona-btn').forEach(b => b.classList.remove('active'));
+  ['p-name','p-age','p-location','p-occupation','p-goals','p-prefs'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+// ── Submit ─────────────────────────────────────────────────────────────────
+async function submitRecommend() {
+  const btn = document.getElementById('submit-btn');
+  const spinner = document.getElementById('spinner');
+  const btnText = document.getElementById('btn-text');
+
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  btnText.textContent = 'Thinking...';
+
+  const persona = buildPersonaFromForm();
+  const context = document.getElementById('r-context').value;
+  const numRecs = parseInt(document.getElementById('r-numrecs').value);
+  const isCold = document.getElementById('r-coldstart').value === 'true';
+
+  const body = {
+    persona, context,
+    num_recs: numRecs,
+    is_cold_start: isCold,
+    conversation_history: chatHistory.length > 0 ? chatHistory : null,
+  };
+
+  try {
+    const res = await fetch('/api/v1/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Request failed');
+    }
+
+    const data = await res.json();
+    lastRecommendations = data.recommendations;
+    chatHistory = [{ role: 'user', content: context || 'General recommendations' },
+                   { role: 'assistant', content: `Here are my top picks: ${data.recommendations.slice(0,3).map(r=>r.item_name).join(', ')}` }];
+    renderResults(data);
+
+  } catch(e) {
+    renderError(e.message);
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnText.textContent = '🚀 Get Recommendations';
+  }
+}
+
+function buildPersonaFromForm() {
+  const prefs = document.getElementById('p-prefs').value
+    .split(',').map(s => s.trim()).filter(Boolean);
+  return {
+    name: document.getElementById('p-name').value || 'Anonymous User',
+    age: parseInt(document.getElementById('p-age').value) || 25,
+    gender: document.getElementById('p-gender').value,
+    location: document.getElementById('p-location').value || 'Nigeria',
+    education: 'BSc',
+    occupation: document.getElementById('p-occupation').value || 'Professional',
+    behavior_patterns: 'Values quality and reliability.',
+    avg_rating_given: 3.7,
+    total_reviews: 20,
+    goals: document.getElementById('p-goals').value || 'Find great products and services.',
+    needs: 'Quality and value',
+    pain_points: 'Poor service, fake products',
+    motivations: 'Value for money',
+    values: 'Quality, honesty',
+    income_level: document.getElementById('p-income').value,
+    price_sensitivity: document.getElementById('p-price').value,
+    rating_tendency: document.getElementById('p-rating').value,
+    preferences: prefs,
+    review_history: [],
+  };
+}
+
+// ── Render Results ─────────────────────────────────────────────────────────
+function renderResults(data) {
+  const panel = document.getElementById('results-panel');
+
+  const coldBadge = data.is_cold_start
+    ? '<span class="cold-badge">❄️ Cold-Start Mode</span>' : '';
+
+  const domainsHtml = data.domains_covered.map(d =>
+    `<span class="tag">${d}</span>`
+  ).join('');
+
+  const profile = data.taste_profile;
+  const profileHtml = `
+    <div class="card">
+      <div class="card-title">🧠 Agent Taste Profile — ${data.persona_name}</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+        ${coldBadge}
+        <span class="tag tag-gold">🎭 ${profile.personality_type}</span>
+        <span class="tag">💰 ${profile.price_preference}</span>
+        <span class="tag">🔍 discovery: ${profile.discovery_openness}</span>
+      </div>
+      <div class="profile-grid">
+        <div class="profile-item">
+          <div class="pi-label">Top Domains</div>
+          <div class="pi-val">${profile.top_domains.join(', ')}</div>
+        </div>
+        <div class="profile-item">
+          <div class="pi-label">Key Interests</div>
+          <div class="pi-val">${profile.key_interests.slice(0,3).join(', ')}</div>
+        </div>
+      </div>
+      <div class="profile-summary">${profile.profile_summary}</div>
+    </div>`;
+
+  const recsHtml = `
+    <div class="card">
+      <div class="card-title">🎯 Recommendations <span style="font-weight:400;color:var(--muted);">(${data.recommendations.length} items · ${data.total_items_scored} scored)</span></div>
+      <div class="section-label" style="margin-bottom:10px;">Domains covered: <span class="domains-row" style="display:inline-flex;">${domainsHtml}</span></div>
+      <div class="rec-list">
+        ${data.recommendations.map(r => renderRecCard(r)).join('')}
+      </div>
+    </div>`;
+
+  const reasoningHtml = `
+    <div class="card">
+      <div class="card-title">💭 Agent Reasoning</div>
+      <div class="reasoning-box">${data.agent_reasoning}</div>
+    </div>`;
+
+  const chatHtml = `
+    <div class="card">
+      <div class="card-title">💬 Multi-Turn Conversation</div>
+      <div class="chat-window">
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-bubble bubble-agent">Hi! I've got ${data.recommendations.length} recommendations ready for <strong>${data.persona_name}</strong>. Want me to refine anything?</div>
+        </div>
+        <div class="chat-input-row">
+          <input id="chat-input" placeholder="Ask to refine, e.g. 'Only budget options' or 'What about books?'" onkeydown="if(event.key==='Enter')sendChat()" />
+          <button class="btn btn-primary btn-sm" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>`;
+
+  panel.innerHTML = profileHtml + recsHtml + reasoningHtml + chatHtml;
+}
+
+function renderRecCard(r) {
+  const rankClass = r.rank <= 3 ? `rank-${r.rank}` : 'rank-other';
+  const confClass = `conf-${r.confidence}`;
+  const crossNote = r.cross_domain_note
+    ? `<div class="rec-cross">🔀 Cross-domain: ${r.cross_domain_note}</div>` : '';
+  return `
+    <div class="rec-card">
+      <div class="rec-rank ${rankClass}">${r.rank}</div>
+      <div class="rec-body">
+        <div class="rec-name">${r.item_name}</div>
+        <div class="rec-meta">
+          <span class="tag">${r.domain}</span>
+          <span class="tag">${r.category}</span>
+          <span class="tag tag-gold ${confClass}">● ${r.confidence}</span>
+        </div>
+        <div class="rec-why">${r.why_fits}</div>
+        ${crossNote}
+      </div>
+    </div>`;
+}
+
+function renderError(msg) {
+  document.getElementById('results-panel').innerHTML = `
+    <div class="card" style="border-color:#e07050;">
+      <div class="card-title" style="color:#c04030;">❌ Error</div>
+      <p style="font-size:0.9rem;color:#c04030;">${msg}</p>
+      <p style="font-size:0.8rem;color:var(--muted);margin-top:8px;">Check your GROQ_API_KEY in .env and that the server is running.</p>
+    </div>`;
+}
+
+// ── Chat ───────────────────────────────────────────────────────────────────
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+
+  addChatBubble(msg, 'user');
+  chatHistory.push({ role: 'user', content: msg });
+
+  const persona = buildPersonaFromForm();
+  const numRecs = parseInt(document.getElementById('r-numrecs').value);
+
+  try {
+    const res = await fetch('/api/v1/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        persona, context: msg, num_recs: numRecs,
+        conversation_history: chatHistory,
+        is_cold_start: false,
+      }),
+    });
+    const data = await res.json();
+    const reply = data.multiturn_response?.response || `Here are updated picks: ${data.recommendations.slice(0,3).map(r=>r.item_name).join(', ')}`;
+    addChatBubble(reply, 'agent');
+    chatHistory.push({ role: 'assistant', content: reply });
+
+    // Update rec list
+    if (data.recommendations?.length) {
+      lastRecommendations = data.recommendations;
+      const recList = document.querySelector('.rec-list');
+      if (recList) recList.innerHTML = data.recommendations.map(renderRecCard).join('');
+    }
+  } catch(e) {
+    addChatBubble('Sorry, something went wrong. Try again!', 'agent');
+  }
+}
+
+function addChatBubble(text, role) {
+  const msgs = document.getElementById('chat-messages');
+  if (!msgs) return;
+  const cls = role === 'user' ? 'bubble-user' : 'bubble-agent';
+  msgs.innerHTML += `<div class="chat-bubble ${cls}">${text}</div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+boot();
+</script>
+</body>
+</html>
